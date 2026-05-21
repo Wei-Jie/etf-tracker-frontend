@@ -17,6 +17,13 @@ export default function SitePasswordGate({ children }) {
       setUnlocked(true);
     }
     setChecking(false);
+
+    // 背景默默對後端 API 發出輕量級健康檢查請求，以防範 Cloud Run 冷啟動延遲 (Warm-up API)
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+    fetch(`${baseUrl}/health`)
+      .then(res => res.json())
+      .then(data => console.log('後端預熱回應:', data.message))
+      .catch(err => console.warn('後端預熱請求已送出:', err.message));
   }, []);
 
   const handleUnlock = (e) => {
