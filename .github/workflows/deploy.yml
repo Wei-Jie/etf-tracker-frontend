@@ -25,6 +25,10 @@ jobs:
           cache-dependency-path: 'package-lock.json'
 
       - name: 安裝依賴套件並執行編譯
+        env:
+          VITE_API_BASE_URL: https://etf-backend-api-104024622513.asia-east1.run.app/api/v1
+          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
+          VITE_SITE_PASSWORD: ${{ secrets.VITE_SITE_PASSWORD }}
         run: |
           npm install
           npm run build
