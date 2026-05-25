@@ -368,44 +368,46 @@ export default function Portfolio() {
               </div>
             ) : (
               <>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>標的</th>
-                      <th>買入日期</th>
-                      <th className="text-right">買入數量</th>
-                      <th className="text-right">買入單價</th>
-                      <th className="text-right">小計成本</th>
-                      <th className="text-right">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayHoldings.map(h => (
-                      <tr key={h.portfolioId}>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>#{h.portfolioId}</td>
-                        <td>
-                          <div style={{ fontWeight: 700 }}>{h.ticker}</div>
-                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.assetName}</div>
-                        </td>
-                        <td>{formatDate(h.buyDate)}</td>
-                        <td className="text-right">{parseFloat(h.quantity).toFixed(4)} 股</td>
-                        <td className="text-right">{formatCurrency(h.unitPrice, 2)}</td>
-                        <td className="text-right" style={{ fontWeight: 600 }}>
-                          {formatCurrency(h.totalCost)}
-                        </td>
-                        <td className="text-right">
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(h.portfolioId, h.ticker)}
-                          >
-                            刪除
-                          </button>
-                        </td>
+                <div className="table-responsive">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>標的</th>
+                        <th>買入日期</th>
+                        <th className="text-right">買入數量</th>
+                        <th className="text-right">買入單價</th>
+                        <th className="text-right">小計成本</th>
+                        <th className="text-right">操作</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {displayHoldings.map(h => (
+                        <tr key={h.portfolioId}>
+                          <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>#{h.portfolioId}</td>
+                          <td>
+                            <div style={{ fontWeight: 700 }}>{h.ticker}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.assetName}</div>
+                          </td>
+                          <td>{formatDate(h.buyDate)}</td>
+                          <td className="text-right">{parseFloat(h.quantity).toFixed(4)} 股</td>
+                          <td className="text-right">{formatCurrency(h.unitPrice, 2)}</td>
+                          <td className="text-right" style={{ fontWeight: 600 }}>
+                            {formatCurrency(h.totalCost)}
+                          </td>
+                          <td className="text-right">
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleDelete(h.portfolioId, h.ticker)}
+                            >
+                              刪除
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* 分頁控制器 */}
                 {totalPages > 1 && (

@@ -1,0 +1,76 @@
+.mobile-topbar {
+  display: none; /* 預設在桌機版隱藏 */
+}
+
+@media (max-width: 768px) {
+  .mobile-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--topbar-height);
+    background: rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid var(--border-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-md);
+    z-index: 99;
+  }
+
+  .mobile-logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .mobile-logo-icon {
+    font-size: 20px;
+  }
+
+  .mobile-logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+
+  .mobile-logo-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .mobile-logo-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .mobile-lock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    background: rgba(178, 123, 94, 0.1);
+    color: var(--accent-primary);
+    border: 1px solid rgba(178, 123, 94, 0.2);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-lock-btn:hover {
+    background: rgba(178, 123, 94, 0.15);
+  }
+
+  .mobile-lock-btn:active {
+    transform: scale(0.95);
+  }
+
+  .lock-icon {
+    font-size: 12px;
+  }
+}

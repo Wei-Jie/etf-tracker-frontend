@@ -549,17 +549,56 @@ body::before {
   box-shadow: var(--shadow-card);
 }
 
-/* --- 響應式 --- */
+/* --- 響應式表格包裹器 --- */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch; /* 優化 iOS 動態阻尼感 */
+  border-radius: var(--radius-md);
+}
+
+.table-responsive .data-table {
+  min-width: 600px; /* 限制最小寬度以防欄位過度擠壓 */
+}
+
+/* --- 響應式佈局媒體查詢 --- */
 @media (max-width: 1200px) {
   .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
+  /* 手機版隱藏桌機側邊欄 */
+  .sidebar {
+    display: none !important;
+  }
+
   .main-content {
     margin-left: 0;
-    padding: var(--space-md);
+    /* 增加上下邊距，以免被 MobileTopbar(64px) 與 MobileBottomNav(60px) 遮擋 */
+    padding: calc(var(--topbar-height) + var(--space-md)) var(--space-md) calc(70px + env(safe-area-inset-bottom, 0px)) var(--space-md);
   }
+
   .grid-cols-2, .grid-cols-3, .grid-cols-4 {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  /* 指標卡片在小螢幕下改為 2x2 網格配置，節省高度空間 */
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-md) !important;
+  }
+  
+  .metric-card {
+    padding: var(--space-md);
+  }
+
+  .metric-value {
+    font-size: 20px; /* 小螢幕字體微縮 */
+  }
+
+  .page-title {
+    font-size: 22px;
   }
 }

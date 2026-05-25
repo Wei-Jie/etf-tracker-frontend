@@ -267,44 +267,46 @@ export default function Dashboard() {
                 <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 'var(--space-lg)' }}>
                   【{selectedOwner}】各資產持倉明細
                 </div>
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>標的</th>
-                      <th className="text-right">股數</th>
-                      <th className="text-right">市值</th>
-                      <th className="text-right">損益</th>
-                      <th className="text-right">報酬率</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summary.holdings.map((h, i) => (
-                      <tr key={h.ticker}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{
-                              width: 10, height: 10, borderRadius: '50%',
-                              background: COLORS[i % COLORS.length],
-                              flexShrink: 0,
-                            }} />
-                            <div>
-                              <div style={{ fontWeight: 600 }}>{h.ticker}</div>
-                              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.assetName}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="text-right">{parseFloat(h.totalShares).toFixed(2)}</td>
-                        <td className="text-right">{formatCurrency(h.marketValue)}</td>
-                        <td className={`text-right ${getPnLClass(h.unrealizedPnL)}`}>
-                          {formatPnL(h.unrealizedPnL)}
-                        </td>
-                        <td className={`text-right ${getPnLClass(h.unrealizedReturnRate)}`}>
-                          {formatPercent(h.unrealizedReturnRate)}
-                        </td>
+                <div className="table-responsive">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>標的</th>
+                        <th className="text-right">股數</th>
+                        <th className="text-right">市值</th>
+                        <th className="text-right">損益</th>
+                        <th className="text-right">報酬率</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {summary.holdings.map((h, i) => (
+                        <tr key={h.ticker}>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{
+                                width: 10, height: 10, borderRadius: '50%',
+                                background: COLORS[i % COLORS.length],
+                                flexShrink: 0,
+                              }} />
+                              <div>
+                                <div style={{ fontWeight: 600 }}>{h.ticker}</div>
+                                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.assetName}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="text-right">{parseFloat(h.totalShares).toFixed(2)}</td>
+                          <td className="text-right">{formatCurrency(h.marketValue)}</td>
+                          <td className={`text-right ${getPnLClass(h.unrealizedPnL)}`}>
+                            {formatPnL(h.unrealizedPnL)}
+                          </td>
+                          <td className={`text-right ${getPnLClass(h.unrealizedReturnRate)}`}>
+                            {formatPercent(h.unrealizedReturnRate)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

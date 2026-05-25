@@ -10,6 +10,11 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const handleLock = () => {
+    sessionStorage.removeItem('site_unlocked');
+    window.location.reload();
+  };
+
   return (
     <aside className="sidebar">
       {/* Logo */}
@@ -35,6 +40,14 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+
+      {/* 安全鎖定按鈕 */}
+      <div className="sidebar-lock">
+        <button className="sidebar-lock-btn" onClick={handleLock}>
+          <span className="nav-icon">🔒</span>
+          <span className="nav-label">安全鎖定</span>
+        </button>
+      </div>
 
       {/* 底部版本 */}
       <div className="sidebar-footer">

@@ -1,0 +1,58 @@
+.mobile-bottom-nav {
+  display: none; /* 預設在桌機版隱藏 */
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.85);
+    border-top: 1px solid var(--border-glass);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    z-index: 99;
+    box-shadow: 0 -4px 20px rgba(148, 163, 184, 0.05);
+  }
+
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    height: 100%;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    gap: 4px;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-nav-icon {
+    font-size: 18px;
+    transition: transform var(--transition-fast);
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  /* Active 狀態 */
+  .mobile-nav-item.active {
+    color: var(--accent-primary);
+    font-weight: 600;
+  }
+
+  .mobile-nav-item.active .mobile-nav-icon {
+    transform: scale(1.15) translateY(-2px);
+  }
+}

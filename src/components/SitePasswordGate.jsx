@@ -11,12 +11,18 @@ export default function SitePasswordGate({ children }) {
   const EXPECTED_PASSWORD = import.meta.env.VITE_SITE_PASSWORD || 'loveWinnie';
 
   useEffect(() => {
-    // 檢查瀏覽器本地是否已經解鎖過
-    const isUnlocked = localStorage.getItem('site_unlocked') === 'true';
-    if (isUnlocked) {
-      setUnlocked(true);
-    }
+    // 檢查瀏覽器 Session 是否已經解鎖過
+    const checkUnlock = () => {
+      const isUnlocked = sessionStorage.getItem('site_unlocked') === 'true';
+      if (isUnlocked) {
+        setUnlocked(true);
+      }
+    };
+    
+    checkUnlock();
     setChecking(false);
+
+    window.addEventListener('site_unlocked_changed', checkUnlock);
 
     // 背景默默對後端 API 發出輕量級健康檢查請求，以防範 Cloud Run 冷啟動延遲 (Warm-up API)
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
@@ -24,6 +30,10 @@ export default function SitePasswordGate({ children }) {
       .then(res => res.json())
       .then(data => console.log('後端預熱回應:', data.message))
       .catch(err => console.warn('後端預熱請求已送出:', err.message));
+
+    return () => {
+      window.removeEventListener('site_unlocked_changed', checkUnlock);
+    };
   }, []);
 
   const handleUnlock = (e) => {
@@ -31,8 +41,10 @@ export default function SitePasswordGate({ children }) {
     setError(false);
 
     if (password === EXPECTED_PASSWORD) {
-      localStorage.setItem('site_unlocked', 'true');
+      sessionStorage.setItem('site_unlocked', 'true');
       setUnlocked(true);
+      // 觸發全站同步事件，使其他可能已經被渲染但尚未 unlocked 的頁面更新（例如跨元件狀態）
+      window.dispatchEvent(new Event('site_unlocked_changed'));
     } else {
       setError(true);
       // 3 秒後自動清除錯誤狀態，方便再次輸入
