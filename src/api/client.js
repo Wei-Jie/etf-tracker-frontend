@@ -52,4 +52,10 @@ export const backtestApi = {
   runProjection: (params) => api.get('/backtest/projection', { params }),
 };
 
+// === 同步工作 API ===
+export const jobsApi = {
+  /** 手動同步今日收盤價 */
+  syncDailyPrices: () => api.post('/jobs/sync-twse-data'),
+};
+
 export default api;

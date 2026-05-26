@@ -602,3 +602,14 @@ body::before {
     font-size: 22px;
   }
 }
+
+/* 🔄 旋轉動畫，為同步按鈕提供絲滑動態載入感 */
+.spin {
+  display: inline-block;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

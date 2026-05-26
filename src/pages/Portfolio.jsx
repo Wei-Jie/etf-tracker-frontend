@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { portfolioApi } from '../api/client';
+import { portfolioApi, jobsApi } from '../api/client';
 import { formatCurrency, formatDate } from '../utils/formatters';
 
 export default function Portfolio() {
@@ -8,6 +8,7 @@ export default function Portfolio() {
   const [showModal, setShowModal] = useState(false);
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
@@ -144,6 +145,24 @@ export default function Portfolio() {
     }
   };
 
+  const handleSyncDaily = async () => {
+    setSyncing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await jobsApi.syncDailyPrices();
+      setSuccess('✅ 今日最新股價同步成功！已為您更新所有持倉市值。');
+      await fetchHoldings(selectedOwner);
+      await fetchOwners();
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (e) {
+      console.error(e);
+      setError(e.response?.data || '股價同步失敗，請確認後端服務是否正常。');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   // 1. 先對 holdings 進行篩選 (標的代號模糊過濾)
   const filteredHoldings = holdings.filter(h => {
     if (!filterTicker.trim()) return true;
@@ -181,14 +200,25 @@ export default function Portfolio() {
 
   return (
     <div>
-      <div className="page-header flex justify-between items-center">
-        <div>
+      <div className="page-header flex justify-between items-center" style={{ flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+        <div style={{ minWidth: '250px', flex: 1 }}>
           <h1 className="page-title">💼 持倉管理</h1>
           <p className="page-subtitle">管理您與家人的每一筆交易明細，支援獨立帳戶切換</p>
         </div>
-        <button className="btn btn-primary" onClick={openAddModal}>
-          ＋ 新增持倉
-        </button>
+        <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', alignItems: 'center' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleSyncDaily}
+            disabled={syncing}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <span className={syncing ? "spin" : ""}>🔄</span>
+            {syncing ? '同步今日股價中...' : '同步今日股價'}
+          </button>
+          <button className="btn btn-primary" onClick={openAddModal}>
+            ＋ 新增持倉
+          </button>
+        </div>
       </div>
 
       {/* 人員切換 Tab */}
