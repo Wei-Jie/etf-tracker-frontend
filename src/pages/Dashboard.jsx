@@ -105,8 +105,16 @@ export default function Dashboard() {
   const fetchOwners = async () => {
     try {
       const res = await portfolioApi.getOwners();
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        const list = res.data.includes('自己') ? res.data : ['自己', ...res.data];
+      if (Array.isArray(res.data)) {
+        let list = [...res.data];
+        // 確保預設至少有「自己」
+        if (!list.includes('自己')) {
+          list = ['自己', ...list];
+        }
+        // 重要安全修復：確保當前選定的新成員（例如剛新增但無持倉的太太）不會被 API 回傳值覆蓋抹除
+        if (selectedOwner && !list.includes(selectedOwner)) {
+          list = [...list, selectedOwner];
+        }
         setOwners(list);
       }
     } catch (e) {
