@@ -56,6 +56,9 @@ export const backtestApi = {
 export const jobsApi = {
   /** 手動同步今日收盤價 */
   syncDailyPrices: () => api.post('/jobs/sync-twse-data'),
+  /** 補齊指定標的之歷史股價 */
+  syncHistoryPrices: (tickers, startYearMonth) => 
+    api.post('/jobs/sync-history', null, { params: { tickers: tickers.join(','), startYearMonth } }),
 };
 
 export default api;

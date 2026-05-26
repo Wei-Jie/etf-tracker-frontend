@@ -28,6 +28,12 @@ export default function Portfolio() {
     ticker: '', buyDate: '', quantity: '', unitPrice: '', owner: '自己',
   });
 
+  // 歷史補檔 Modal 狀態
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyForm, setHistoryForm] = useState({ ticker: '', startYearMonth: '202301' });
+  const [historySyncing, setHistorySyncing] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+
   const fetchOwners = async () => {
     try {
       const res = await portfolioApi.getOwners();
@@ -163,6 +169,40 @@ export default function Portfolio() {
     }
   };
 
+  const handleSyncHistory = async (e) => {
+    e?.preventDefault();
+    if (!historyForm.ticker.trim()) {
+      setHistoryError('請輸入標的代號');
+      return;
+    }
+    if (!/^\d{4,6}$/.test(historyForm.ticker.trim())) {
+      setHistoryError('標的代號格式不正確，通常為 4 到 6 碼數字 (例如 0050 或 2330)');
+      return;
+    }
+    if (!/^\d{6}$/.test(historyForm.startYearMonth)) {
+      setHistoryError('年月格式必須為 YYYYMM (例如 202301)');
+      return;
+    }
+
+    setHistorySyncing(true);
+    setHistoryError(null);
+    try {
+      const ticker = historyForm.ticker.trim().toUpperCase();
+      await jobsApi.syncHistoryPrices([ticker], historyForm.startYearMonth);
+      setSuccess(`✅ 標的 ${ticker} 自 ${historyForm.startYearMonth} 歷史股價已同步補齊！已為您重新整理持倉數據。`);
+      setShowHistoryModal(false);
+      setHistoryForm({ ticker: '', startYearMonth: '202301' });
+      await fetchHoldings(selectedOwner);
+      await fetchOwners();
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (e) {
+      console.error(e);
+      setHistoryError(e.response?.data || '歷史股價同步失敗，請確認標的代號是否正確。');
+    } finally {
+      setHistorySyncing(false);
+    }
+  };
+
   // 1. 先對 holdings 進行篩選 (標的代號模糊過濾)
   const filteredHoldings = holdings.filter(h => {
     if (!filterTicker.trim()) return true;
@@ -214,6 +254,14 @@ export default function Portfolio() {
           >
             <span className={syncing ? "spin" : ""}>🔄</span>
             {syncing ? '同步今日股價中...' : '同步今日股價'}
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => { setShowHistoryModal(true); setHistoryError(null); }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+          >
+            <span>📅</span>
+            補齊歷史股價
           </button>
           <button className="btn btn-primary" onClick={openAddModal}>
             ＋ 新增持倉
@@ -593,6 +641,58 @@ export default function Portfolio() {
               </button>
               <button className="btn btn-primary" onClick={handleAddOwner}>
                 確認新增成員
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📅 補齊歷史股價 Modal */}
+      {showHistoryModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !historySyncing && setShowHistoryModal(false)}>
+          <div className="modal">
+            <div className="modal-title">📅 補齊歷史股價數據</div>
+            {historyError && <div className="alert alert-error" style={{ marginBottom: 'var(--space-md)' }}>⚠️ {historyError}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div className="form-group">
+                <label className="form-label">標的代號</label>
+                <input 
+                  className="form-input" 
+                  placeholder="例如：0050, 00919, 2330"
+                  value={historyForm.ticker} 
+                  onChange={e => setHistoryForm(f => ({ ...f, ticker: e.target.value }))}
+                  disabled={historySyncing}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">補檔起始年月 (格式: YYYYMM)</label>
+                <input 
+                  className="form-input" 
+                  placeholder="例如：202301"
+                  value={historyForm.startYearMonth} 
+                  onChange={e => setHistoryForm(f => ({ ...f, startYearMonth: e.target.value }))}
+                  disabled={historySyncing}
+                />
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                💡 <strong>防限流機制提示</strong>：<br />
+                由於台灣證交所有嚴格的流量限制，補齊歷史股價時，後端會以「每次請求安全間隔 1 秒」的形式逐月抓取。補齊大約需要 3-10 秒鐘，期間請運作耐心等待，勿重複點選或重新整理網頁。
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-md)', marginTop: 'var(--space-lg)', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => { setShowHistoryModal(false); setHistoryError(null); }}
+                disabled={historySyncing}
+              >
+                取消
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleSyncHistory} 
+                disabled={historySyncing}
+              >
+                {historySyncing ? '歷史股價同步中...' : '開始同步補檔'}
               </button>
             </div>
           </div>
