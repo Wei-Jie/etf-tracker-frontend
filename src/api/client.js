@@ -61,4 +61,13 @@ export const jobsApi = {
     api.post('/jobs/sync-history', null, { params: { tickers: tickers.join(','), startYearMonth } }),
 };
 
+// === 每日 AI 財經要聞 API ===
+export const newsApi = {
+  /** 獲取今日 AI 財經晨報 (免 X-API-KEY，後端放行) */
+  getDailyBriefing: () => api.get('/news/briefing'),
+
+  /** 手動強制重新生成今日 AI 晨報快取 */
+  refreshDailyBriefing: () => api.post('/news/briefing/refresh'),
+};
+
 export default api;

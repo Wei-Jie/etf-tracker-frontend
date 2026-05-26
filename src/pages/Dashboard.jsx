@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { portfolioApi } from '../api/client';
+import { portfolioApi, newsApi } from '../api/client';
 import { formatCurrency, formatPercent, formatPnL, getPnLClass } from '../utils/formatters';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
@@ -32,12 +32,56 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // AI 財經晨報狀態
+  const [briefing, setBriefing] = useState('');
+  const [briefingLoading, setBriefingLoading] = useState(true);
+  const [briefingError, setBriefingError] = useState(null);
+  const [refreshingBriefing, setRefreshingBriefing] = useState(false);
+
   // 多人持倉管理狀態
   const [owners, setOwners] = useState(['自己']);
   const [selectedOwner, setSelectedOwner] = useState('自己');
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [newOwnerName, setNewOwnerName] = useState('');
   const [ownerError, setOwnerError] = useState(null);
+
+  // 獲取今日 AI 晨報
+  const fetchDailyBriefing = async () => {
+    setBriefingLoading(true);
+    try {
+      const res = await newsApi.getDailyBriefing();
+      if (res.data && res.data.success) {
+        setBriefing(res.data.briefingHtml || '');
+        setBriefingError(null);
+      } else {
+        setBriefingError('今日 AI 晨報加載失敗。');
+      }
+    } catch (e) {
+      console.error('無法載入每日財經晨報：', e);
+      setBriefingError('暫時無法載入今日 AI 財經焦點。請確認後端服務是否運行。');
+    } finally {
+      setBriefingLoading(false);
+    }
+  };
+
+  // 強制重新生成今日 AI 晨報
+  const handleRefreshBriefing = async () => {
+    if (refreshingBriefing) return;
+    setRefreshingBriefing(true);
+    try {
+      const res = await newsApi.refreshDailyBriefing();
+      if (res.data && res.data.success) {
+        setBriefing(res.data.briefingHtml || '');
+        setBriefingError(null);
+      }
+    } catch (e) {
+      console.error('強制重整財經晨報失敗：', e);
+      const errMsg = e.response?.data?.message || '重整今日 AI 晨報失敗，請確認 API 金鑰是否配置，或是否遭遇流控限制。';
+      alert(`⚠️ ${errMsg}`);
+    } finally {
+      setRefreshingBriefing(false);
+    }
+  };
 
   const fetchOwners = async () => {
     try {
@@ -63,9 +107,10 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, [selectedOwner]);
 
-  // 初始化載入人員名單
+  // 初始化載入人員名單與 AI 財經晨報
   useEffect(() => {
     fetchOwners();
+    fetchDailyBriefing();
   }, []);
 
   const handleAddOwner = () => {
@@ -123,6 +168,36 @@ export default function Dashboard() {
       <div className="page-header">
         <h1 className="page-title">📊 投資組合儀表板</h1>
         <p className="page-subtitle">即時持倉概況與資產配置分析，支援多人帳戶獨立切換</p>
+      </div>
+
+      {/* 今日 AI 財經焦點卡片 */}
+      <div className="card ai-briefing-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+            📰 今日 AI 3.5 Flash 財經焦點
+          </h2>
+          <button 
+            className="btn btn-secondary btn-sm"
+            onClick={handleRefreshBriefing}
+            disabled={briefingLoading || refreshingBriefing}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <span className={(briefingLoading || refreshingBriefing) ? 'spin' : ''}>🔄</span>
+            {(briefingLoading || refreshingBriefing) ? '即時更新' : '即時更新'}
+          </button>
+        </div>
+        
+        {briefingLoading ? (
+          <div className="skeleton-loader">
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-line skeleton-item" />
+            <div className="skeleton-line skeleton-item" />
+          </div>
+        ) : briefingError ? (
+          <div className="alert alert-error">⚠️ {briefingError}</div>
+        ) : (
+          <div dangerouslySetInnerHTML={{ __html: briefing }} />
+        )}
       </div>
 
       {/* 人員切換 Tab */}

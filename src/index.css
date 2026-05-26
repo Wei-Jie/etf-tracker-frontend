@@ -613,3 +613,119 @@ body::before {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* --- AI 每日財經焦點與骨架屏樣式 --- */
+.ai-briefing-card {
+  background: linear-gradient(135deg, rgba(178, 123, 94, 0.05) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border: 1px solid rgba(178, 123, 94, 0.15);
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-xl);
+}
+
+.ai-briefing-card::after {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(178, 123, 94, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.brief-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+}
+
+.brief-item {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.06);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: all var(--transition-base);
+}
+
+.brief-item:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(178, 123, 94, 0.15);
+  transform: translateY(-1px);
+}
+
+.brief-item h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.brief-item p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.brief-summary {
+  background: var(--gradient-brand);
+  color: white;
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.6;
+  position: relative;
+  box-shadow: 0 4px 15px rgba(178, 123, 94, 0.15);
+}
+
+.briefing-notice {
+  background: rgba(178, 123, 94, 0.05);
+  border: 1px dashed rgba(178, 123, 94, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* 骨架屏 Skeleton Loading */
+.skeleton-loader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+.skeleton-line {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.06) 25%, rgba(148, 163, 184, 0.12) 37%, rgba(148, 163, 184, 0.06) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 4px;
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 30%;
+  margin-bottom: var(--space-sm);
+}
+
+.skeleton-item {
+  height: 80px;
+  border-radius: var(--radius-md);
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
