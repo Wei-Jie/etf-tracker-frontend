@@ -89,9 +89,9 @@ export default function Dashboard() {
     if (sendingEmail) return;
     setSendingEmail(true);
     try {
-      const res = await newsApi.sendTestEmail();
+      const res = await newsApi.sendTestEmail(selectedOwner);
       if (res.data && res.data.success) {
-        alert(`📬 ${res.data.message || '今日 AI 電子晨報已發送至您的 Gmail 信箱！'}`);
+        alert(`📬 ${res.data.message || '今日 AI 電子晨報已發送！'}`);
       }
     } catch (e) {
       console.error('發送電子晨報失敗：', e);

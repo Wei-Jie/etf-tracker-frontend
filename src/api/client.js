@@ -70,7 +70,7 @@ export const newsApi = {
   refreshDailyBriefing: () => api.post('/news/briefing/refresh'),
 
   /** 手動測試發送今日電子晨報 */
-  sendTestEmail: () => api.post('/news/briefing/test-email'),
+  sendTestEmail: (owner) => api.post('/news/briefing/test-email', null, { params: { owner } }),
 };
 
 export default api;
