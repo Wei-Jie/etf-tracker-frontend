@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [briefingLoading, setBriefingLoading] = useState(true);
   const [briefingError, setBriefingError] = useState(null);
   const [refreshingBriefing, setRefreshingBriefing] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // 多人持倉管理狀態
   const [owners, setOwners] = useState(['自己']);
@@ -80,6 +81,24 @@ export default function Dashboard() {
       alert(`⚠️ ${errMsg}`);
     } finally {
       setRefreshingBriefing(false);
+    }
+  };
+
+  // 手動發送測試電子晨報
+  const handleSendTestEmail = async () => {
+    if (sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      const res = await newsApi.sendTestEmail();
+      if (res.data && res.data.success) {
+        alert(`📬 ${res.data.message || '今日 AI 電子晨報已發送至您的 Gmail 信箱！'}`);
+      }
+    } catch (e) {
+      console.error('發送電子晨報失敗：', e);
+      const errMsg = e.response?.data?.message || '發送電子晨報失敗，請確認郵件服務配置是否正確（例如密碼或發件人環境變數）。';
+      alert(`⚠️ ${errMsg}`);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -172,19 +191,30 @@ export default function Dashboard() {
 
       {/* 今日 AI 財經焦點卡片 */}
       <div className="card ai-briefing-card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
             📰 今日 AI 3.5 Flash 財經焦點
           </h2>
-          <button 
-            className="btn btn-secondary btn-sm"
-            onClick={handleRefreshBriefing}
-            disabled={briefingLoading || refreshingBriefing}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <span className={(briefingLoading || refreshingBriefing) ? 'spin' : ''}>🔄</span>
-            {(briefingLoading || refreshingBriefing) ? '即時更新' : '即時更新'}
-          </button>
+          <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={handleSendTestEmail}
+              disabled={briefingLoading || refreshingBriefing || sendingEmail || briefingError}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span>{sendingEmail ? '✉️' : '📧'}</span>
+              {sendingEmail ? '發送中...' : '測試發信'}
+            </button>
+            <button 
+              className="btn btn-secondary btn-sm"
+              onClick={handleRefreshBriefing}
+              disabled={briefingLoading || refreshingBriefing || sendingEmail}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <span className={(briefingLoading || refreshingBriefing) ? 'spin' : ''}>🔄</span>
+              {(briefingLoading || refreshingBriefing) ? '即時更新' : '即時更新'}
+            </button>
+          </div>
         </div>
         
         {briefingLoading ? (

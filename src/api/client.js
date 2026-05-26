@@ -68,6 +68,9 @@ export const newsApi = {
 
   /** 手動強制重新生成今日 AI 晨報快取 */
   refreshDailyBriefing: () => api.post('/news/briefing/refresh'),
+
+  /** 手動測試發送今日電子晨報 */
+  sendTestEmail: () => api.post('/news/briefing/test-email'),
 };
 
 export default api;
