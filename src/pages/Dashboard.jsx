@@ -201,7 +201,7 @@ export default function Dashboard() {
       <div className="card ai-briefing-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-            📰 今日 AI 3.5 Flash 財經焦點
+            📰 今日 Gemini AI 財經焦點
           </h2>
           <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
             <button 
