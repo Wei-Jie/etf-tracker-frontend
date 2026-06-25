@@ -298,8 +298,13 @@ export default function Dashboard() {
         </div>
       ) : (
         <>
-          {/* 四個指標卡片 */}
-          <div className="grid grid-cols-4" style={{ marginBottom: 'var(--space-xl)' }}>
+          {/* 五個指標卡片 */}
+          <div style={{ 
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: 'var(--space-md)',
+            marginBottom: 'var(--space-xl)' 
+          }}>
             <div className="metric-card">
               <div className="metric-label">💰 累計投入本金</div>
               <div className="metric-value">{formatCurrency(summary?.totalInvested || 0)}</div>
@@ -318,11 +323,18 @@ export default function Dashboard() {
               <div className="metric-sub">累計資產增值</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">📉 報酬率</div>
+              <div className="metric-label">📉 未實現報酬率</div>
               <div className={`metric-value ${getPnLClass(summary?.unrealizedReturnRate)}`}>
                 {formatPercent(summary?.unrealizedReturnRate || 0)}
               </div>
-              <div className="metric-sub">複利報酬表現</div>
+              <div className="metric-sub">未實現複利報酬</div>
+            </div>
+            <div className="metric-card">
+              <div className="metric-label">💸 累計已實現獲利</div>
+              <div className={`metric-value ${getPnLClass(summary?.totalRealizedPnL)}`}>
+                {formatPnL(summary?.totalRealizedPnL || 0)}
+              </div>
+              <div className="metric-sub">歷史已實現交易損益</div>
             </div>
           </div>
 

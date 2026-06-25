@@ -28,6 +28,14 @@ export default function Portfolio() {
     ticker: '', buyDate: '', quantity: '', unitPrice: '', owner: '自己',
   });
 
+  // 賣出 Modal 狀態
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [maxSellQuantity, setMaxSellQuantity] = useState(0);
+  const [sellForm, setSellForm] = useState({
+    ticker: '', sellDate: '', quantity: '', unitPrice: '', owner: '自己',
+  });
+  const [realizedHistory, setRealizedHistory] = useState([]);
+
   // 歷史補檔 Modal 狀態
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyForm, setHistoryForm] = useState({ ticker: '', startYearMonth: '202301' });
@@ -66,10 +74,20 @@ export default function Portfolio() {
     }
   };
 
+  const fetchRealizedHistory = async (ownerName = selectedOwner) => {
+    try {
+      const res = await portfolioApi.getRealizedHistory(ownerName);
+      setRealizedHistory(Array.isArray(res.data) ? res.data : []);
+    } catch (e) {
+      console.error('無法取得已實現損益歷史：', e);
+    }
+  };
+
   // 當選定人改變時，重載持倉，並重置篩選與頁碼
   useEffect(() => {
     fetchOwners();
     fetchHoldings(selectedOwner);
+    fetchRealizedHistory(selectedOwner);
     setFilterTicker('');
     setCurrentPage(1);
   }, [selectedOwner]);
@@ -155,6 +173,68 @@ export default function Portfolio() {
       setTimeout(() => setSuccess(null), 3000);
     } catch {
       setError('刪除失敗');
+    }
+  };
+
+  const openSellModal = (ticker) => {
+    // 計算該 ticker 的總持股數
+    const totalShares = holdings
+      .filter(h => h.ticker === ticker)
+      .reduce((sum, h) => sum + parseFloat(h.quantity || 0), 0);
+    
+    setMaxSellQuantity(totalShares);
+    setSellForm({
+      ticker: ticker,
+      sellDate: new Date().toLocaleDateString('sv-SE'),
+      quantity: '',
+      unitPrice: '',
+      owner: selectedOwner,
+    });
+    setError(null);
+    setShowSellModal(true);
+  };
+
+  const handleSell = async () => {
+    if (!sellForm.ticker || !sellForm.sellDate || !sellForm.quantity || !sellForm.unitPrice || !sellForm.owner) {
+      setError('請填寫所有欄位');
+      return;
+    }
+    const qty = parseFloat(sellForm.quantity);
+    if (qty <= 0) {
+      setError('賣出數量必須大於 0');
+      return;
+    }
+    if (qty > maxSellQuantity) {
+      setError(`賣出數量 (${qty}) 不能大於目前持有的最大股數 (${maxSellQuantity})`);
+      return;
+    }
+    const price = parseFloat(sellForm.unitPrice);
+    if (price <= 0) {
+      setError('賣出單價必須大於 0');
+      return;
+    }
+    
+    setSubmitting(true);
+    setError(null);
+    try {
+      await portfolioApi.sellHolding({
+        ticker: sellForm.ticker.trim().toUpperCase(),
+        buyDate: sellForm.sellDate, // 借用 buyDate 當作賣出日期
+        quantity: qty,
+        unitPrice: price,
+        owner: sellForm.owner.trim(),
+      });
+      setSuccess('✅ 賣出成功！已為您扣減庫存並計算已實現損益。');
+      setShowSellModal(false);
+      
+      await fetchOwners();
+      await fetchHoldings(selectedOwner);
+      await fetchRealizedHistory(selectedOwner);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e.response?.data || '賣出失敗，請確認後端服務是否正常。');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -480,7 +560,14 @@ export default function Portfolio() {
                           <td className="text-right" style={{ fontWeight: 600 }}>
                             {formatCurrency(h.totalCost)}
                           </td>
-                          <td className="text-right">
+                          <td className="text-right" style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openSellModal(h.ticker)}
+                              style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}
+                            >
+                              💸 賣出
+                            </button>
                             <button
                               className="btn btn-danger btn-sm"
                               onClick={() => handleDelete(h.portfolioId, h.ticker)}
@@ -702,6 +789,108 @@ export default function Portfolio() {
                 {historySyncing ? '歷史股價同步中...' : '開始同步補檔'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 💸 賣出持倉 Modal */}
+      {showSellModal && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && !submitting && setShowSellModal(false)}>
+          <div className="modal">
+            <div className="modal-title">💸 賣出持倉交易</div>
+            {error && <div className="alert alert-error" style={{ marginBottom: 'var(--space-md)' }}>⚠️ {error}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+              <div className="form-group">
+                <label className="form-label">持倉所有人</label>
+                <input className="form-input" value={sellForm.owner} disabled style={{ opacity: 0.7 }} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">標的代號</label>
+                <input className="form-input" value={sellForm.ticker} disabled style={{ opacity: 0.7 }} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">賣出日期</label>
+                <input className="form-input" type="date"
+                  value={sellForm.sellDate} onChange={e => setSellForm(f => ({ ...f, sellDate: e.target.value }))}
+                  disabled={submitting} />
+              </div>
+              <div className="grid grid-cols-2" style={{ gap: 'var(--space-md)' }}>
+                <div className="form-group">
+                  <label className="form-label">賣出數量（股，上限 {maxSellQuantity.toFixed(4)}）</label>
+                  <input className="form-input" type="number" step="0.0001" min="0.0001" max={maxSellQuantity}
+                    placeholder="輸入股數"
+                    value={sellForm.quantity} onChange={e => setSellForm(f => ({ ...f, quantity: e.target.value }))}
+                    disabled={submitting} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">賣出單價（元）</label>
+                  <input className="form-input" type="number" step="0.01" min="0.01"
+                    placeholder="輸入單價"
+                    value={sellForm.unitPrice} onChange={e => setSellForm(f => ({ ...f, unitPrice: e.target.value }))}
+                    disabled={submitting} />
+                </div>
+              </div>
+              {sellForm.quantity && sellForm.unitPrice && (
+                <div style={{ background: 'rgba(88,80,236,0.08)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 13 }}>
+                  賣出小計金額：{formatCurrency(parseFloat(sellForm.quantity) * parseFloat(sellForm.unitPrice) || 0)}
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--space-md)', marginTop: 'var(--space-lg)', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary" onClick={() => { setShowSellModal(false); setError(null); }} disabled={submitting}>
+                取消
+              </button>
+              <button className="btn btn-primary" onClick={handleSell} disabled={submitting}>
+                {submitting ? '交易處理中...' : '確認賣出'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 💸 已實現損益歷史交易紀錄 */}
+      {realizedHistory.length > 0 && (
+        <div className="card" style={{ marginTop: 'var(--space-xl)' }}>
+          <div className="card-title" style={{ fontSize: '18px', fontWeight: 700, marginBottom: 'var(--space-md)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>💸</span> 已實現損益交易紀錄 (歷史賣出戰果)
+          </div>
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>標的</th>
+                  <th>賣出日期</th>
+                  <th className="text-right">賣出股數</th>
+                  <th className="text-right">平均買入價</th>
+                  <th className="text-right">賣出成交價</th>
+                  <th className="text-right">已實現損益</th>
+                </tr>
+              </thead>
+              <tbody>
+                {realizedHistory.map((h, idx) => {
+                  const pnl = parseFloat(h.realizedPnL || 0);
+                  const isProfit = pnl >= 0;
+                  return (
+                    <tr key={h.realizedId || idx}>
+                      <td>
+                        <div style={{ fontWeight: 700 }}>{h.ticker}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{h.assetName}</div>
+                      </td>
+                      <td>{formatDate(h.sellDate)}</td>
+                      <td className="text-right">{parseFloat(h.quantity).toFixed(4)} 股</td>
+                      <td className="text-right">{formatCurrency(h.averageBuyPrice, 2)}</td>
+                      <td className="text-right">{formatCurrency(h.sellPrice, 2)}</td>
+                      <td className="text-right" style={{ 
+                        fontWeight: 700, 
+                        color: isProfit ? '#10B981' : '#EF4444' 
+                      }}>
+                        {isProfit ? '+' : ''}{formatCurrency(pnl)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

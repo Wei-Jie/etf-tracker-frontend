@@ -21,6 +21,12 @@ export const portfolioApi = {
   /** 新增一筆買入紀錄 */
   addHolding: (data) => api.post('/portfolio/holdings', data),
 
+  /** 執行賣出紀錄並計算已實現損益 */
+  sellHolding: (data) => api.post('/portfolio/sell', data),
+
+  /** 查詢已實現損益歷史明細 */
+  getRealizedHistory: (owner) => api.get('/portfolio/realized', { params: { owner } }),
+
   /** 刪除指定持倉紀錄 */
   deleteHolding: (portfolioId) => api.delete(`/portfolio/holdings/${portfolioId}`),
 
