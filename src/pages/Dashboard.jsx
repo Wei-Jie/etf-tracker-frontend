@@ -197,7 +197,7 @@ export default function Dashboard() {
         <p className="page-subtitle">即時持倉概況與資產配置分析，支援多人帳戶獨立切換</p>
       </div>
 
-      {/* 今日 AI 財經焦點卡片 */}
+      {/* 依使用者要求，暫時隱藏今日 AI 財經焦點卡片，停止此功能
       <div className="card ai-briefing-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: 'var(--space-sm)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
@@ -237,6 +237,7 @@ export default function Dashboard() {
           <div dangerouslySetInnerHTML={{ __html: briefing }} />
         )}
       </div>
+      */}
 
       {/* 人員切換 Tab */}
       <div style={{
