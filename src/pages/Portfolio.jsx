@@ -25,8 +25,35 @@ export default function Portfolio() {
   const [pageSize, setPageSize] = useState(10);
 
   const [form, setForm] = useState({
-    ticker: '', buyDate: '', quantity: '', unitPrice: '', owner: '自己',
+    ticker: '', buyDate: '', quantity: '', unitPrice: '', fee: '', owner: '自己',
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  // 富邦手續費自動估算 (電子單6折，整股低消20，零股低消1)
+  const calculateEstimateFee = (qty, price) => {
+    const q = parseFloat(qty);
+    const p = parseFloat(price);
+    if (isNaN(q) || isNaN(p) || q <= 0 || p <= 0) return '';
+    const volume = q * p;
+    const calculatedFee = Math.round(volume * 0.001425 * 0.6);
+    const isOddShare = q % 1000 !== 0;
+    if (isOddShare) {
+      return calculatedFee < 1 ? '1' : calculatedFee.toString();
+    } else {
+      return calculatedFee < 20 ? '20' : calculatedFee.toString();
+    }
+  };
+
+  const handleFormChange = (field, value) => {
+    setForm(prev => {
+      const updated = { ...prev, [field]: value };
+      if (field === 'quantity' || field === 'unitPrice') {
+        updated.fee = calculateEstimateFee(updated.quantity, updated.unitPrice);
+      }
+      return updated;
+    });
+  };
 
   // 賣出 Modal 狀態
   const [showSellModal, setShowSellModal] = useState(false);
@@ -93,12 +120,30 @@ export default function Portfolio() {
   }, [selectedOwner]);
 
   const openAddModal = () => {
+    setIsEditing(false);
+    setEditingId(null);
     setForm({
       ticker: '',
       buyDate: '',
       quantity: '',
       unitPrice: '',
+      fee: '',
       owner: selectedOwner, // 預設為目前所在的 Tab 成員
+    });
+    setError(null);
+    setShowModal(true);
+  };
+
+  const openEditModal = (h) => {
+    setIsEditing(true);
+    setEditingId(h.portfolioId);
+    setForm({
+      ticker: h.ticker,
+      buyDate: h.buyDate,
+      quantity: h.quantity.toString(),
+      unitPrice: h.unitPrice.toString(),
+      fee: h.fee ? h.fee.toString() : '0',
+      owner: h.owner,
     });
     setError(null);
     setShowModal(true);
@@ -117,6 +162,7 @@ export default function Portfolio() {
         buyDate: form.buyDate,
         quantity: parseFloat(form.quantity),
         unitPrice: parseFloat(form.unitPrice),
+        fee: form.fee ? parseFloat(form.fee) : null,
         owner: form.owner.trim(),
       });
       setSuccess('✅ 新增成功！');
@@ -126,12 +172,43 @@ export default function Portfolio() {
       const addedOwner = form.owner.trim();
       setSelectedOwner(addedOwner);
 
-      setForm({ ticker: '', buyDate: '', quantity: '', unitPrice: '', owner: addedOwner });
+      setForm({ ticker: '', buyDate: '', quantity: '', unitPrice: '', fee: '', owner: addedOwner });
       await fetchOwners();
       await fetchHoldings(addedOwner);
       setTimeout(() => setSuccess(null), 3000);
     } catch (e) {
       setError(e.response?.data || '新增失敗，請確認標的代號是否存在於資料庫中');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!form.ticker || !form.buyDate || !form.quantity || !form.unitPrice || !form.owner) {
+      setError('請填寫所有欄位');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await portfolioApi.updateHolding(editingId, {
+        ticker: form.ticker.trim().toUpperCase(),
+        buyDate: form.buyDate,
+        quantity: parseFloat(form.quantity),
+        unitPrice: parseFloat(form.unitPrice),
+        fee: form.fee ? parseFloat(form.fee) : null,
+        owner: form.owner.trim(),
+      });
+      setSuccess('✅ 修改成功！');
+      setShowModal(false);
+      setIsEditing(false);
+      setEditingId(null);
+
+      await fetchOwners();
+      await fetchHoldings(selectedOwner);
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e.response?.data || '修改失敗，請確認輸入的資料格式。');
     } finally {
       setSubmitting(false);
     }
@@ -543,6 +620,7 @@ export default function Portfolio() {
                         <th className="text-right">買入數量</th>
                         <th className="text-right">買入單價</th>
                         <th className="text-right">小計成本</th>
+                        <th className="text-right">手續費</th>
                         <th className="text-right">操作</th>
                       </tr>
                     </thead>
@@ -560,7 +638,17 @@ export default function Portfolio() {
                           <td className="text-right" style={{ fontWeight: 600 }}>
                             {formatCurrency(h.totalCost)}
                           </td>
+                          <td className="text-right" style={{ color: 'var(--text-secondary)' }}>
+                            {formatCurrency(h.fee || 0)}
+                          </td>
                           <td className="text-right" style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => openEditModal(h)}
+                              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-glass)' }}
+                            >
+                              ✏️ 編輯
+                            </button>
                             <button
                               className="btn btn-secondary btn-sm"
                               onClick={() => openSellModal(h.ticker)}
@@ -644,11 +732,11 @@ export default function Portfolio() {
         )}
       </div>
 
-      {/* 新增交易紀錄 Modal */}
+      {/* 新增/編輯交易紀錄 Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowModal(false)}>
           <div className="modal">
-            <div className="modal-title">＋ 新增持倉交易紀錄</div>
+            <div className="modal-title">{isEditing ? '✏️ 編輯交易紀錄' : '＋ 新增持倉交易紀錄'}</div>
             {error && <div className="alert alert-error" style={{ marginBottom: 'var(--space-md)' }}>⚠️ {error}</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
               <div className="form-group">
@@ -680,27 +768,36 @@ export default function Portfolio() {
                   <label className="form-label">買入數量（股）</label>
                   <input className="form-input" type="number" step="0.0001" min="0.0001"
                     placeholder="例如：10"
-                    value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} />
+                    value={form.quantity} onChange={e => handleFormChange('quantity', e.target.value)} />
                 </div>
                 <div className="form-group">
                   <label className="form-label">買入單價（元）</label>
                   <input className="form-input" type="number" step="0.01" min="0.01"
                     placeholder="例如：94.90"
-                    value={form.unitPrice} onChange={e => setForm(f => ({ ...f, unitPrice: e.target.value }))} />
+                    value={form.unitPrice} onChange={e => handleFormChange('unitPrice', e.target.value)} />
                 </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">交易手續費（元）</label>
+                <input className="form-input" type="number" step="1" min="0"
+                  placeholder="若未填則由系統估算"
+                  value={form.fee} onChange={e => setForm(f => ({ ...f, fee: e.target.value }))} />
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  💡 提示：輸入數量與單價後會自動依富邦證券（電子單 6 折）試算低消，您亦可依實際 APP 帳單金額手動修正（如定期定額 1 元）。
+                </span>
               </div>
               {form.quantity && form.unitPrice && (
                 <div style={{ background: 'rgba(88,80,236,0.08)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', fontSize: 13 }}>
-                  小計成本：{formatCurrency(parseFloat(form.quantity) * parseFloat(form.unitPrice) || 0)}
+                  小計成交價金額：{formatCurrency(parseFloat(form.quantity) * parseFloat(form.unitPrice) || 0)}
                 </div>
               )}
             </div>
             <div style={{ display: 'flex', gap: 'var(--space-md)', marginTop: 'var(--space-lg)', justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={() => { setShowModal(false); setError(null); }}>
+              <button className="btn btn-secondary" onClick={() => { setShowModal(false); setError(null); setIsEditing(false); }}>
                 取消
               </button>
-              <button className="btn btn-primary" onClick={handleAdd} disabled={submitting}>
-                {submitting ? '儲存中...' : '確認新增'}
+              <button className="btn btn-primary" onClick={isEditing ? handleUpdate : handleAdd} disabled={submitting}>
+                {submitting ? '儲存中...' : (isEditing ? '確認修改' : '確認新增')}
               </button>
             </div>
           </div>

@@ -30,6 +30,9 @@ export const portfolioApi = {
   /** 刪除指定持倉紀錄 */
   deleteHolding: (portfolioId) => api.delete(`/portfolio/holdings/${portfolioId}`),
 
+  /** 編輯指定持倉紀錄 */
+  updateHolding: (portfolioId, data) => api.put(`/portfolio/holdings/${portfolioId}`, data),
+
   /** 獲取現有擁有人清單 */
   getOwners: () => api.get('/portfolio/owners'),
 };
